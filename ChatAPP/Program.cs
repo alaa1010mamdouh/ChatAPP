@@ -1,3 +1,7 @@
+using ChatAPP.Context;
+using ChatAPP.Hubs;
+using Microsoft.EntityFrameworkCore;
+
 namespace ChatAPP
 {
     public class Program
@@ -8,7 +12,19 @@ namespace ChatAPP
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+            builder.Services.AddSignalR();
+            builder.Services.AddDbContext<ChatDbContext>(options =>
+            {
+                options.UseSqlServer(builder.Configuration.GetConnectionString("ChatConnection"));
+            });
+            builder.Services.AddCors(o =>
+            {
+                o.AddPolicy("default", p =>
+                {
+                    p.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin();
+                });
 
+            });
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -25,11 +41,13 @@ namespace ChatAPP
             app.UseRouting();
 
             app.UseAuthorization();
+            app.UseCors("default");
 
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
 
+            app.MapHub<ChatHub>("/Chathub");
             app.Run();
         }
     }
